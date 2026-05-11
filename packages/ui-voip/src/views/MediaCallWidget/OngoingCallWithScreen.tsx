@@ -80,7 +80,7 @@ const OngoingCall = () => {
 			</WidgetHeader>
 			<WidgetContent>
 				<CardWidgetContainer>
-					<PeerInfo {...peerInfo} slots={remoteSlots} remoteMuted={remoteMuted} />
+					{peerInfo.external ? <PeerInfo {...peerInfo} /> : <PeerInfo {...peerInfo} slots={remoteSlots} remoteMuted={remoteMuted} />}
 
 					{isPopout && (
 						<Box display='flex' flexDirection='column' gap={4}>
@@ -137,7 +137,9 @@ const OngoingCall = () => {
 					/>
 					<ActionButton disabled={connecting || reconnecting} label={t('Forward')} icon='arrow-forward' onClick={onForward} />
 					<ActionButton
-						label={t('Voice_call__user__hangup', { user: 'userId' in peerInfo ? peerInfo.displayName : peerInfo.number })}
+						label={t('Voice_call__user__hangup', {
+							user: peerInfo.external ? peerInfo.displayName || peerInfo.number : peerInfo.displayName,
+						})}
 						icon='phone-off'
 						danger
 						onClick={onEndCall}
