@@ -15,6 +15,7 @@ import {
 import { useMediaCallInstance } from '../../context/MediaCallInstanceContext';
 import { useMediaCallView } from '../../context/MediaCallViewContext';
 import useRegisterView from '../../context/useRegisterView';
+import { useVisibleAppActions } from '../../experimental/AppActionButtons/hooks/useVisibleAppActions';
 import MediaCallCardList from '../MediaCallCardList';
 import PopoutDockPrompt from '../PopoutDockPrompt';
 
@@ -69,6 +70,8 @@ const MediaCallRoomSection = ({ showChat, onToggleChat, user, containerHeight }:
 
 	useRegisterView('room');
 
+	const visibleActions = useVisibleAppActions();
+
 	if (!peerInfo || 'number' in peerInfo) {
 		return null;
 	}
@@ -85,6 +88,7 @@ const MediaCallRoomSection = ({ showChat, onToggleChat, user, containerHeight }:
 			aria-label={t('Voice_call')}
 			{...getSplitStyles(showChat)}
 		>
+			{visibleActions.length > 0 && <ActionStrip leftSlot={visibleActions} />}
 			{isPopout ? <PopoutDockPrompt onClosePopout={onClosePopout} /> : <MediaCallCardList user={user} shouldWrapCards={shouldWrapCards} />}
 			<ActionStrip
 				leftSlot={
