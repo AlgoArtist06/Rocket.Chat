@@ -10,13 +10,6 @@ import { settings } from '../../app/settings/server';
 import { beforeChangeRoomRole } from '../lib/callbacks/beforeChangeRoomRole';
 import { syncRoomRolePriorityForUserAndRoom } from '../lib/roles/syncRoomRolePriority';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		removeRoomOwner(rid: string, userId: string): boolean;
-	}
-}
-
 export const removeRoomOwner = async (fromUserId: string, rid: string, userId: string): Promise<boolean> => {
 	check(rid, String);
 	check(userId, String);

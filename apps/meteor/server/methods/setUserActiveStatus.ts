@@ -4,13 +4,6 @@ import { Meteor } from 'meteor/meteor';
 import { hasPermissionAsync } from '../../app/authorization/server/functions/hasPermission';
 import { setUserActiveStatus } from '../../app/lib/server/functions/setUserActiveStatus';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		setUserActiveStatus(userId: string, active: boolean, confirmRelinquish?: boolean): boolean;
-	}
-}
-
 export const executeSetUserActiveStatus = async (
 	fromUserId: string,
 	userId: string,

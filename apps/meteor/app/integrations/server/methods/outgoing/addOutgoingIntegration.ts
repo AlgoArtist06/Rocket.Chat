@@ -9,13 +9,6 @@ import { notifyOnIntegrationChanged } from '../../../../lib/server/lib/notifyLis
 import { validateOutgoingIntegration } from '../../lib/validateOutgoingIntegration';
 import { validateScriptEngine } from '../../lib/validateScriptEngine';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		addOutgoingIntegration(integration: INewOutgoingIntegration): Promise<IOutgoingIntegration>;
-	}
-}
-
 export const addOutgoingIntegration = async (userId: string, integration: INewOutgoingIntegration): Promise<IOutgoingIntegration> => {
 	check(
 		integration,

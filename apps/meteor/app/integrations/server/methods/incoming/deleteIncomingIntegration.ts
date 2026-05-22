@@ -4,13 +4,6 @@ import { Meteor } from 'meteor/meteor';
 import { hasPermissionAsync } from '../../../../authorization/server/functions/hasPermission';
 import { notifyOnIntegrationChangedById } from '../../../../lib/server/lib/notifyListener';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		deleteIncomingIntegration(integrationId: string): Promise<boolean>;
-	}
-}
-
 export const deleteIncomingIntegration = async (integrationId: string, userId: string): Promise<void> => {
 	let integration;
 

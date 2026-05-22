@@ -5,16 +5,6 @@ import { Meteor } from 'meteor/meteor';
 import { hasPermissionAsync } from '../../../../authorization/server/functions/hasPermission';
 import { parseUriList } from '../functions/parseUriList';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		updateOAuthApp(
-			applicationId: IOAuthApps['_id'],
-			application: Pick<IOAuthApps, 'name' | 'redirectUri' | 'active'>,
-		): Promise<IOAuthApps | null>;
-	}
-}
-
 export const updateOAuthApp = async (
 	userId: string,
 	applicationId: IOAuthApps['_id'],

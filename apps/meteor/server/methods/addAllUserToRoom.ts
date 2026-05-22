@@ -12,13 +12,6 @@ import { getDefaultSubscriptionPref } from '../../app/utils/lib/getDefaultSubscr
 import { callbacks } from '../lib/callbacks';
 import { getSubscriptionAutotranslateDefaultConfig } from '../lib/getSubscriptionAutotranslateDefaultConfig';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		addAllUserToRoom(rid: IRoom['_id'], activeUsersOnly?: boolean): Promise<true>;
-	}
-}
-
 export const addAllUserToRoomFn = async (userId: string, rid: IRoom['_id'], activeUsersOnly = false): Promise<true> => {
 	check(rid, String);
 	check(activeUsersOnly, Boolean);

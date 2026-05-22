@@ -9,13 +9,6 @@ import { notifyOnMessageChange } from '../../../lib/server/lib/notifyListener';
 import { settings } from '../../../settings/server';
 import { follow } from '../functions';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		followMessage(message: { mid: IMessage['_id'] }): false | undefined;
-	}
-}
-
 export const followMessage = async (user: IUser, { mid }: { mid: IMessage['_id'] }): Promise<false | undefined> => {
 	if (mid && !settings.get('Threads_enabled')) {
 		throw new Meteor.Error('error-not-allowed', 'not-allowed', { method: 'followMessage' });

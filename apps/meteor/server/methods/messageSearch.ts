@@ -4,21 +4,12 @@ import { Messages, Subscriptions, Users } from '@rocket.chat/models';
 import { Match, check } from 'meteor/check';
 
 import { canAccessRoomIdAsync } from '../../app/authorization/server/functions/canAccessRoom';
-
 import type { IRawSearchResult } from '../../app/search/server/model/ISearchResult';
 import { settings } from '../../app/settings/server';
 import { readSecondaryPreferred } from '../database/readSecondaryPreferred';
 import { parseMessageSearchQuery } from '../lib/parseMessageSearchQuery';
 
 const logger = new Logger('MessageSearch');
-
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		messageSearch(text: string, rid?: string, limit?: number, offset?: number): IRawSearchResult | false;
-	}
-}
-
 export const messageSearch = async function (
 	userId: string,
 	text: string,

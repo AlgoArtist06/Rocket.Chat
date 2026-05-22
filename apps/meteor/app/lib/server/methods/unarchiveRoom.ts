@@ -6,13 +6,6 @@ import { Meteor } from 'meteor/meteor';
 import { hasPermissionAsync } from '../../../authorization/server/functions/hasPermission';
 import { unarchiveRoom } from '../functions/unarchiveRoom';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		unarchiveRoom(rid: string): Promise<void>;
-	}
-}
-
 export const executeUnarchiveRoom = async (userId: string, rid: string) => {
 	check(rid, String);
 

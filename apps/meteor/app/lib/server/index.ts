@@ -10,6 +10,7 @@ import './oauth/twitter';
 import './methods/addOAuthService';
 import './methods/addUsersToRoom';
 import './methods/archiveRoom';
+import './methods/blockUser';
 import './methods/checkRegistrationSecretURL';
 import './methods/cleanRoomHistory';
 import './methods/createChannel';
@@ -32,6 +33,7 @@ import './methods/sendMessage';
 import './methods/sendSMTPTestEmail';
 import './methods/setEmail';
 import './methods/unarchiveRoom';
+import './methods/unblockUser';
 import './methods/updateMessage';
 import './methods/checkFederationConfiguration';
 

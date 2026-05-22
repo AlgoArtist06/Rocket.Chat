@@ -8,16 +8,6 @@ import { notifyOnIntegrationChanged } from '../../../../lib/server/lib/notifyLis
 import { validateOutgoingIntegration } from '../../lib/validateOutgoingIntegration';
 import { isScriptEngineFrozen, validateScriptEngine } from '../../lib/validateScriptEngine';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		updateOutgoingIntegration(
-			integrationId: string,
-			integration: INewOutgoingIntegration | IUpdateOutgoingIntegration,
-		): IIntegration | null;
-	}
-}
-
 export const updateOutgoingIntegration = async (
 	userId: string,
 	integrationId: string,

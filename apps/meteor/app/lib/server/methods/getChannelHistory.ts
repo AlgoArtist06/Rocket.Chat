@@ -8,22 +8,6 @@ import { settings } from '../../../settings/server/cached';
 import { normalizeMessagesForUser } from '../../../utils/server/lib/normalizeMessagesForUser';
 import { getHiddenSystemMessages } from '../lib/getHiddenSystemMessages';
 
-declare module '@rocket.chat/ddp-client' {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	interface ServerMethods {
-		getChannelHistory(params: {
-			rid: string;
-			latest?: Date;
-			oldest?: Date;
-			inclusive?: boolean;
-			offset?: number;
-			count?: number;
-			unreads?: boolean;
-			showThreadMessages?: boolean;
-		}): boolean | IMessage[] | { messages: IMessage[]; firstUnread?: any; unreadNotLoaded?: number };
-	}
-}
-
 export const getChannelHistory = async ({
 	rid,
 	fromUserId,
