@@ -1,4 +1,3 @@
-import './methods/getStatistics';
 import './startup/monitor';
 import './functions/slashCommandsStats';
 

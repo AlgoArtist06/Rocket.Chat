@@ -1,9 +1,7 @@
-import type { ServerMethods } from '@rocket.chat/ddp-client';
 import { Integrations } from '@rocket.chat/models';
 import { Meteor } from 'meteor/meteor';
 
 import { hasPermissionAsync } from '../../../../authorization/server/functions/hasPermission';
-import { methodDeprecationLogger } from '../../../../lib/server/lib/deprecationWarningLogger';
 import { notifyOnIntegrationChangedById } from '../../../../lib/server/lib/notifyListener';
 
 declare module '@rocket.chat/ddp-client' {
@@ -38,19 +36,3 @@ export const deleteIncomingIntegration = async (integrationId: string, userId: s
 	await Integrations.removeById(integrationId);
 	void notifyOnIntegrationChangedById(integrationId, 'removed');
 };
-
-Meteor.methods<ServerMethods>({
-	async deleteIncomingIntegration(integrationId) {
-		methodDeprecationLogger.method('deleteIncomingIntegration', '9.0.0', '/v1/integrations.remove');
-		const userId = Meteor.userId();
-		if (!userId) {
-			throw new Meteor.Error('not_authorized', 'Unauthorized', {
-				method: 'deleteIncomingIntegration',
-			});
-		}
-
-		await deleteIncomingIntegration(integrationId, userId);
-
-		return true;
-	},
-});

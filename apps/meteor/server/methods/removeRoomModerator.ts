@@ -1,13 +1,11 @@
 import { api, Message, Team } from '@rocket.chat/core-services';
 import type { IRoom, IUser } from '@rocket.chat/core-typings';
 import { isRoomFederated } from '@rocket.chat/core-typings';
-import type { ServerMethods } from '@rocket.chat/ddp-client';
 import { Subscriptions, Rooms, Users } from '@rocket.chat/models';
 import { check } from 'meteor/check';
 import { Meteor } from 'meteor/meteor';
 
 import { hasPermissionAsync } from '../../app/authorization/server/functions/hasPermission';
-import { methodDeprecationLogger } from '../../app/lib/server/lib/deprecationWarningLogger';
 import { notifyOnSubscriptionChangedById } from '../../app/lib/server/lib/notifyListener';
 import { settings } from '../../app/settings/server';
 import { beforeChangeRoomRole } from '../lib/callbacks/beforeChangeRoomRole';
@@ -99,18 +97,3 @@ export const removeRoomModerator = async (fromUserId: IUser['_id'], rid: IRoom['
 
 	return true;
 };
-
-Meteor.methods<ServerMethods>({
-	async removeRoomModerator(rid, userId) {
-		methodDeprecationLogger.method('removeRoomModerator', '9.0.0', ['/v1/channels.removeModerator', '/v1/groups.removeModerator']);
-		const uid = Meteor.userId();
-
-		if (!uid) {
-			throw new Meteor.Error('error-invalid-user', 'Invalid user', {
-				method: 'removeRoomModerator',
-			});
-		}
-
-		return removeRoomModerator(uid, rid, userId);
-	},
-});

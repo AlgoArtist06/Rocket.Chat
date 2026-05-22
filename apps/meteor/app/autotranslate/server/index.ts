@@ -6,7 +6,6 @@
 import { TranslationProviderRegistry } from './autotranslate';
 import './permissions';
 import './methods/getSupportedLanguages';
-import './methods/saveSettings';
 import './methods/translateMessage';
 import './googleTranslate';
 import './deeplTranslate';

@@ -1,12 +1,10 @@
 import { isRegisterUser } from '@rocket.chat/core-typings';
-import type { ServerMethods } from '@rocket.chat/ddp-client';
 import { Users, Rooms } from '@rocket.chat/models';
 import { check } from 'meteor/check';
 import { Meteor } from 'meteor/meteor';
 
 import { hasPermissionAsync } from '../../../authorization/server/functions/hasPermission';
 import { unarchiveRoom } from '../functions/unarchiveRoom';
-import { methodDeprecationLogger } from '../lib/deprecationWarningLogger';
 
 declare module '@rocket.chat/ddp-client' {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -35,16 +33,3 @@ export const executeUnarchiveRoom = async (userId: string, rid: string) => {
 
 	return unarchiveRoom(rid, user);
 };
-
-Meteor.methods<ServerMethods>({
-	async unarchiveRoom(rid) {
-		methodDeprecationLogger.method('unarchiveRoom', '9.0.0', '/v1/channels.unarchive');
-		const userId = Meteor.userId();
-
-		if (!userId) {
-			throw new Meteor.Error('error-invalid-user', 'Invalid user', { method: 'unarchiveRoom' });
-		}
-
-		return executeUnarchiveRoom(userId, rid);
-	},
-});

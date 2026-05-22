@@ -1,15 +1,12 @@
 import { Apps, AppEvents } from '@rocket.chat/apps';
 import { AppsEngineException } from '@rocket.chat/apps-engine/definition/exceptions';
 import { Message, Team, Room } from '@rocket.chat/core-services';
-import type { ServerMethods } from '@rocket.chat/ddp-client';
 import { Subscriptions, Rooms, Users, Roles } from '@rocket.chat/models';
-import { Match, check } from 'meteor/check';
 import { Meteor } from 'meteor/meteor';
 
 import { canAccessRoomAsync } from '../../app/authorization/server';
 import { hasPermissionAsync } from '../../app/authorization/server/functions/hasPermission';
 import { hasRoleAsync } from '../../app/authorization/server/functions/hasRole';
-import { methodDeprecationLogger } from '../../app/lib/server/lib/deprecationWarningLogger';
 import { notifyOnRoomChanged, notifyOnSubscriptionChanged } from '../../app/lib/server/lib/notifyListener';
 import { settings } from '../../app/settings/server';
 import { RoomMemberActions } from '../../definition/IRoomTypeConfig';
@@ -126,26 +123,3 @@ export const removeUserFromRoomMethod = async (fromId: string, data: { rid: stri
 
 	return true;
 };
-
-Meteor.methods<ServerMethods>({
-	async removeUserFromRoom(data) {
-		methodDeprecationLogger.method('removeUserFromRoom', '9.0.0', ['/v1/channels.kick', '/v1/groups.kick']);
-		check(
-			data,
-			Match.ObjectIncluding({
-				rid: String,
-				username: String,
-			}),
-		);
-
-		const fromId = Meteor.userId();
-
-		if (!fromId) {
-			throw new Meteor.Error('error-invalid-user', 'Invalid user', {
-				method: 'removeUserFromRoom',
-			});
-		}
-
-		return removeUserFromRoomMethod(fromId, data);
-	},
-});

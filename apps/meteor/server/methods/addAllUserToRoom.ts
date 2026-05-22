@@ -1,13 +1,11 @@
 import { Message } from '@rocket.chat/core-services';
 import type { IRoom } from '@rocket.chat/core-typings';
-import type { ServerMethods } from '@rocket.chat/ddp-client';
 import { Subscriptions, Rooms, Users } from '@rocket.chat/models';
 import { check } from 'meteor/check';
 import { Meteor } from 'meteor/meteor';
 
 import { hasPermissionAsync } from '../../app/authorization/server/functions/hasPermission';
 import { beforeAddUserToRoom } from '../../app/lib/server/lib/beforeAddUserToRoom';
-import { methodDeprecationLogger } from '../../app/lib/server/lib/deprecationWarningLogger';
 import { notifyOnSubscriptionChangedById } from '../../app/lib/server/lib/notifyListener';
 import { settings } from '../../app/settings/server';
 import { getDefaultSubscriptionPref } from '../../app/utils/lib/getDefaultSubscriptionPref';
@@ -83,16 +81,3 @@ export const addAllUserToRoomFn = async (userId: string, rid: IRoom['_id'], acti
 	}
 	return true;
 };
-
-Meteor.methods<ServerMethods>({
-	async addAllUserToRoom(rid, activeUsersOnly = false) {
-		methodDeprecationLogger.method('addAllUserToRoom', '9.0.0', ['/v1/channels.addAll', '/v1/groups.addAll']);
-		if (!this.userId) {
-			throw new Meteor.Error(403, 'Access to Method Forbidden', {
-				method: 'addAllToRoom',
-			});
-		}
-
-		return addAllUserToRoomFn(this.userId, rid, activeUsersOnly);
-	},
-});

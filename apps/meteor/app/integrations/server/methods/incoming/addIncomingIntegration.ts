@@ -1,5 +1,4 @@
 import type { INewIncomingIntegration, IIncomingIntegration } from '@rocket.chat/core-typings';
-import type { ServerMethods } from '@rocket.chat/ddp-client';
 import { Integrations, Subscriptions, Users, Rooms } from '@rocket.chat/models';
 import { Random } from '@rocket.chat/random';
 import { removeEmpty } from '@rocket.chat/tools';
@@ -8,7 +7,6 @@ import { Meteor } from 'meteor/meteor';
 
 import { addUserRolesAsync } from '../../../../../server/lib/roles/addUserRoles';
 import { hasPermissionAsync, hasAllPermissionAsync } from '../../../../authorization/server/functions/hasPermission';
-import { methodDeprecationLogger } from '../../../../lib/server/lib/deprecationWarningLogger';
 import { notifyOnIntegrationChanged } from '../../../../lib/server/lib/notifyListener';
 import { validateScriptEngine, isScriptEngineFrozen } from '../../lib/validateScriptEngine';
 import { validateScriptSyntax } from '../../lib/validateScriptSyntax';
@@ -176,18 +174,3 @@ export const addIncomingIntegration = async (userId: string, integration: INewIn
 
 	return integrationStored as IIncomingIntegration;
 };
-
-Meteor.methods<ServerMethods>({
-	async addIncomingIntegration(integration: INewIncomingIntegration): Promise<IIncomingIntegration> {
-		methodDeprecationLogger.method('addIncomingIntegration', '9.0.0', '/v1/integrations.create');
-		const { userId } = this;
-
-		if (!userId) {
-			throw new Meteor.Error('invalid-user', 'Invalid User', {
-				method: 'addIncomingIntegration',
-			});
-		}
-
-		return addIncomingIntegration(userId, integration);
-	},
-});
