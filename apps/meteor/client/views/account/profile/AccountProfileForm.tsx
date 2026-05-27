@@ -170,9 +170,9 @@ const AccountProfileForm = (props: AllHTMLAttributes<HTMLFormElement>) => {
 					username,
 					nickname,
 					bio,
+					phones,
 				},
 				customFields,
-				phones,
 			});
 
 			if (statusDirty) {
