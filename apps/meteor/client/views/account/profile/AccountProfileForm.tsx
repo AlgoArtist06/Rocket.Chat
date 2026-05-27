@@ -419,7 +419,6 @@ const AccountProfileForm = (props: AllHTMLAttributes<HTMLFormElement>) => {
 					{errors.email && <FieldError>{errors.email.message}</FieldError>}
 					{!allowEmailChange && <FieldHint>{t('Email_Change_Disabled')}</FieldHint>}
 				</Field>
-				{customFieldsMetadata && <CustomFieldsForm formName='customFields' formControl={control} metadata={customFieldsMetadata} />}
 
 				<Field>
 					<FieldLabel is='span' aria-hidden='true'>
@@ -435,6 +434,8 @@ const AccountProfileForm = (props: AllHTMLAttributes<HTMLFormElement>) => {
 						/>
 					</FieldRow>
 				</Field>
+
+				{customFieldsMetadata && <CustomFieldsForm formName='customFields' formControl={control} metadata={customFieldsMetadata} />}
 			</FieldGroup>
 		</Box>
 	);
