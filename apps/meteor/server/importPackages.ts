@@ -66,7 +66,6 @@ import '../app/smarsh-connector/server';
 import '../app/theme/server';
 import '../app/threads/server';
 import '../app/ui-master/server';
-import '../app/webdav/server';
 import '../app/wordpress/server';
 import '../app/meteor-accounts-saml/server';
 import '../app/e2e/server';
