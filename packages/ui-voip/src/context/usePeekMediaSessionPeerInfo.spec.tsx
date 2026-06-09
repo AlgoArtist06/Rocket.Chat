@@ -74,7 +74,7 @@ describe('usePeekMediaSessionPeerInfo', () => {
 				wrapper: createWrapper(instance),
 			});
 
-			expect(result.current).toEqual({ external: true, number: '+5511999999999' });
+			expect(result.current).toEqual({ number: '+5511999999999' });
 		});
 
 		it('returns internal peer info for user contact', () => {
@@ -99,7 +99,6 @@ describe('usePeekMediaSessionPeerInfo', () => {
 			});
 
 			expect(result.current).toEqual({
-				external: false,
 				displayName: 'John Doe',
 				userId: 'userId123',
 				username: 'johndoe',
@@ -133,7 +132,7 @@ describe('usePeekMediaSessionPeerInfo', () => {
 				wrapper: createWrapper(instance),
 			});
 
-			expect(result.current).toEqual({ external: true, number: '+5511999999999' });
+			expect(result.current).toEqual({ number: '+5511999999999' });
 
 			act(() => {
 				instanceState = null;
@@ -157,7 +156,6 @@ describe('usePeekMediaSessionPeerInfo', () => {
 			});
 
 			expect(result.current).toEqual({
-				external: false,
 				displayName: 'Jane Smith',
 				userId: 'userId456',
 				username: undefined,

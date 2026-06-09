@@ -142,7 +142,6 @@ export const useMediaSession = (instance?: MediaSignalingSession): MediaSessionS
 					type: 'instance_updated',
 					payload: {
 						peerInfo: {
-							external: false,
 							displayName: instanceState.title,
 							userId: 'unknown',
 							username: undefined,

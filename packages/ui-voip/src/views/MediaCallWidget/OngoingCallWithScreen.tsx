@@ -20,6 +20,7 @@ import {
 import { useMediaCallInstance } from '../../context';
 import { useMediaCallView } from '../../context/MediaCallViewContext';
 import { usePlayMediaStream } from '../../providers/usePlayMediaStream';
+import { isExternalPeer } from '../../utils/isExternalPeer';
 
 const OngoingCall = () => {
 	const { t } = useTranslation();
@@ -80,7 +81,7 @@ const OngoingCall = () => {
 			</WidgetHeader>
 			<WidgetContent>
 				<CardWidgetContainer>
-					{peerInfo.external ? <PeerInfo {...peerInfo} /> : <PeerInfo {...peerInfo} slots={remoteSlots} remoteMuted={remoteMuted} />}
+					<PeerInfo {...peerInfo} slots={remoteSlots} remoteMuted={remoteMuted} />
 
 					{isPopout && (
 						<Box display='flex' flexDirection='column' gap={4}>
@@ -138,7 +139,7 @@ const OngoingCall = () => {
 					<ActionButton disabled={connecting || reconnecting} label={t('Forward')} icon='arrow-forward' onClick={onForward} />
 					<ActionButton
 						label={t('Voice_call__user__hangup', {
-							user: peerInfo.external ? peerInfo.displayName || peerInfo.number : peerInfo.displayName,
+							user: isExternalPeer(peerInfo) ? peerInfo.displayName || peerInfo.number : peerInfo.displayName,
 						})}
 						icon='phone-off'
 						danger
