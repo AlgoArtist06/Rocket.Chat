@@ -2,6 +2,7 @@ import { Box, ButtonGroup } from '@rocket.chat/fuselage';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import VideoEscalatedView from './VideoEscalatedView';
 import {
 	ToggleButton,
 	Timer,
@@ -11,6 +12,7 @@ import {
 	CARD_LIST_SECTION_MAX_HEIGHT,
 	ActionStrip,
 	ActionToggleChat,
+	VideoCallButton,
 } from '../../components';
 import { useMediaCallInstance } from '../../context/MediaCallInstanceContext';
 import { useMediaCallView } from '../../context/MediaCallViewContext';
@@ -55,13 +57,14 @@ const MediaCallRoomSection = ({ showChat, onToggleChat, user, containerHeight }:
 		onToggleScreenSharing,
 		onOpenPopout,
 		onClosePopout,
+		onRequestVideoCall,
 		streams: { localScreen },
 	} = useMediaCallView();
 	const { currentViews } = useMediaCallInstance();
 
 	const isPopout = currentViews.includes('popout');
 
-	const { muted, held, peerInfo, connectionState, startedAt } = sessionState;
+	const { muted, held, peerInfo, connectionState, startedAt, escalated } = sessionState;
 
 	const shouldWrapCards = useShouldWrapCards(showChat, containerHeight);
 
@@ -92,7 +95,14 @@ const MediaCallRoomSection = ({ showChat, onToggleChat, user, containerHeight }:
 			aria-label={t('Voice_call')}
 			{...getSplitStyles(showChat)}
 		>
-			{isPopout ? <PopoutDockPrompt onClosePopout={onClosePopout} /> : <MediaCallCardList user={user} shouldWrapCards={shouldWrapCards} />}
+			{!escalated ? <ActionStrip rightSlot={<VideoCallButton onClick={onRequestVideoCall} />} /> : null}
+			{isPopout ? (
+				<PopoutDockPrompt onClosePopout={onClosePopout} />
+			) : escalated ? (
+				<VideoEscalatedView />
+			) : (
+				<MediaCallCardList user={user} shouldWrapCards={shouldWrapCards} />
+			)}
 			<ActionStrip
 				leftSlot={
 					<Box color='default' alignContent='center' pis={16}>
