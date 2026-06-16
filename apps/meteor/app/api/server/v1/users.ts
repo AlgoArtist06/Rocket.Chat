@@ -41,6 +41,7 @@ import { removePersonalAccessTokenOfUser } from '../../../../imports/personal-ac
 import { runUserLogoutCleanUp } from '../../../../server/hooks/userLogoutCleanUp';
 import { UserChangedAuditStore } from '../../../../server/lib/auditServerEvents/userChanged';
 import { i18n } from '../../../../server/lib/i18n';
+import { SystemLogger } from '../../../../server/lib/logger/system';
 import { resetUserE2EEncriptionKey } from '../../../../server/lib/resetUserE2EKey';
 import { runAfterVerifyEmail } from '../../../../server/lib/users/runAfterVerifyEmail';
 import { registerUser } from '../../../../server/methods/registerUser';
@@ -1487,7 +1488,7 @@ API.v1
 API.v1.post(
 	'users.sendConfirmationEmail',
 	{
-		authRequired: true,
+		authRequired: false,
 		body: isUsersSendConfirmationEmailParamsPOST,
 		rateLimiterOptions: {
 			numRequestsAllowed: 1,
@@ -1496,16 +1497,11 @@ API.v1.post(
 		response: {
 			200: voidSuccessResponse,
 			400: validateBadRequestErrorResponse,
-			401: validateUnauthorizedErrorResponse,
 		},
 	},
 	async function action() {
-		const { email } = this.bodyParams;
-
-		if (await sendConfirmationEmail(email)) {
-			return API.v1.success();
-		}
-		return API.v1.failure();
+		void sendConfirmationEmail(this.bodyParams.email).catch((err) => SystemLogger.error({ msg: 'sendConfirmationEmail failed', err }));
+		return API.v1.success();
 	},
 );
 
