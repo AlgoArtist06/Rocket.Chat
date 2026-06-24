@@ -15,6 +15,7 @@ import { beforeCreateUserCallback } from '../../../../server/lib/callbacks/befor
 import { getClientAddress } from '../../../../server/lib/getClientAddress';
 import { getMaxLoginTokens } from '../../../../server/lib/getMaxLoginTokens';
 import { i18n } from '../../../../server/lib/i18n';
+import { SystemLogger } from '../../../../server/lib/logger/system';
 import { addUserRolesAsync } from '../../../../server/lib/roles/addUserRoles';
 import { joinDefaultChannels } from '../../../../server/lib/rooms/joinDefaultChannels';
 import { getAvatarSuggestionForUser } from '../../../../server/lib/users/getAvatarSuggestionForUser';
@@ -399,8 +400,8 @@ Accounts.insertUserDoc = async function (options, user) {
 
 	if (!options.skipAppsEngineEvent) {
 		// `post` triggered events don't need to wait for the promise to resolve
-		Apps.self?.triggerEvent(AppEvents.IPostUserCreated, { user, performedBy: options.performedBy }).catch((e) => {
-			Apps.self?.getRocketChatLogger().error({ msg: 'Error while executing post user created event', err: e });
+		Apps.triggerEvent(AppEvents.IPostUserCreated, { user, performedBy: options.performedBy }).catch((e) => {
+			SystemLogger.error({ msg: 'Error while executing post user created event', err: e });
 		});
 	}
 
@@ -468,7 +469,7 @@ const validateLoginAttemptAsync = async function (login) {
 	 */
 	if (login.type !== 'resume') {
 		// App IPostUserLoggedIn event hook
-		await Apps.self?.triggerEvent(AppEvents.IPostUserLoggedIn, login.user);
+		await Apps.triggerEvent(AppEvents.IPostUserLoggedIn, login.user);
 	}
 
 	return true;
