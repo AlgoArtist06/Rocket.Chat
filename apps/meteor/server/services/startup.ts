@@ -1,3 +1,4 @@
+import { registerAppsEngine } from '@rocket.chat/apps';
 import { api } from '@rocket.chat/core-services';
 import { Logger } from '@rocket.chat/logger';
 import { OmnichannelTranscript, QueueWorker } from '@rocket.chat/omnichannel-services';
@@ -35,7 +36,10 @@ import { i18n } from '../lib/i18n';
 export const registerServices = async (): Promise<void> => {
 	const { db } = MongoInternals.defaultRemoteCollectionDriver().mongo;
 
-	api.registerService(new AppsEngineService());
+	const appsEngineService = new AppsEngineService();
+	api.registerService(appsEngineService);
+	// Inject the service instance as the backing implementation for the `Apps` facade
+	registerAppsEngine(appsEngineService);
 	api.registerService(new AnalyticsService());
 	api.registerService(new AuthorizationLivechat());
 	api.registerService(new BannerService());
