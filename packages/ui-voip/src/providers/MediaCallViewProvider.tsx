@@ -70,14 +70,14 @@ const MediaCallViewProvider = ({ children }: MediaCallViewProviderProps) => {
 				if (!instance) {
 					return;
 				}
-				return instance.on('endedCall', () => {
-					if (sessionState.hidden) {
+				return instance.on('endedCall', ({ call, wasHidden }) => {
+					if (wasHidden || call.shouldSkipSoundEffects()) {
 						return;
 					}
 					callback();
 				});
 			},
-			[instance, sessionState.hidden],
+			[instance],
 		),
 	);
 

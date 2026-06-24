@@ -229,6 +229,8 @@ export class ClientMediaCall implements IClientMediaCall {
 
 	private escalated: boolean;
 
+	private hangupReason: CallHangupReason | null;
+
 	private _flags: CallFlag[];
 
 	public get flags(): CallFlag[] {
@@ -317,6 +319,7 @@ export class ClientMediaCall implements IClientMediaCall {
 		this.receivedRemoteSdp = false;
 		this.enabledFeatures = null;
 		this.escalated = false;
+		this.hangupReason = null;
 
 		this.earlySignals = new Set();
 		this.stateTimeoutHandlers = new Set();
@@ -644,7 +647,7 @@ export class ClientMediaCall implements IClientMediaCall {
 		if (!this.hasRemoteData) {
 			// if the call is over, we no longer need to wait for its data
 			if (signal.type === 'notification' && signal.notification === 'hangup') {
-				this.changeState('hangup');
+				this.setHangupState(signal.hangupReason);
 				return;
 			}
 
@@ -705,7 +708,7 @@ export class ClientMediaCall implements IClientMediaCall {
 		}
 
 		this.config.transporter.answer(this.callId, 'reject');
-		this.changeState('hangup');
+		this.setHangupState('rejected');
 	}
 
 	public transfer(callee: { type: CallActorType; id: string }): void {
@@ -917,6 +920,18 @@ export class ClientMediaCall implements IClientMediaCall {
 
 	public hasFlag(flag: CallFlag): boolean {
 		return this._flags.includes(flag);
+	}
+
+	public shouldSkipSoundEffects(): boolean {
+		if (this.hidden) {
+			return true;
+		}
+
+		if (this.hangupReason === 'normal') {
+			return true;
+		}
+
+		return false;
 	}
 
 	private canChangeToState(newState: CallState): boolean {
@@ -1138,7 +1153,7 @@ export class ClientMediaCall implements IClientMediaCall {
 		}
 
 		this.config.transporter.answer(this.callId, 'unavailable');
-		this.changeState('hangup');
+		this.setHangupState('unavailable');
 	}
 
 	protected async processEarlySignals(): Promise<void> {
@@ -1187,7 +1202,7 @@ export class ClientMediaCall implements IClientMediaCall {
 				break;
 
 			case 'hangup':
-				return this.flagAsEnded('remote');
+				return this.flagAsEnded('remote', signal.hangupReason);
 			case 'escalated':
 				return this.flagAsEscalated();
 		}
@@ -1236,16 +1251,24 @@ export class ClientMediaCall implements IClientMediaCall {
 		this.changeState('accepted');
 	}
 
-	private flagAsEnded(reason: CallHangupReason): void {
-		this.config.logger?.debug('ClientMediaCall.flagAsEnded', reason);
+	private flagAsEnded(reasonForServer: CallHangupReason, reasonForClient?: CallHangupReason): void {
+		this.config.logger?.debug('ClientMediaCall.flagAsEnded', reasonForServer, reasonForClient);
 		if (this._state === 'hangup') {
 			return;
 		}
 
 		if (!this.hidden && this.hasRemoteData) {
-			this.config.transporter.hangup(this.callId, reason);
+			this.config.transporter.hangup(this.callId, reasonForServer);
 		}
 
+		this.setHangupState(reasonForClient || reasonForServer);
+	}
+
+	private setHangupState(reason?: CallHangupReason): void {
+		if (reason) {
+			this.hangupReason = reason;
+			this.config.logger?.debug('Hangup Reason:', reason);
+		}
 		this.changeState('hangup');
 	}
 
