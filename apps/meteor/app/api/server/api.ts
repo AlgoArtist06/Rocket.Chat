@@ -6,6 +6,7 @@ import { WebApp } from 'meteor/webapp';
 
 import { APIClass } from './ApiClass';
 import { cors } from './middlewares/cors';
+import { experimentalWarningMiddleware } from './middlewares/experimental';
 import { loggerMiddleware } from './middlewares/logger';
 import { metricsMiddleware } from './middlewares/metrics';
 import { remoteAddressMiddleware } from './middlewares/remoteAddressMiddleware';
@@ -80,6 +81,11 @@ export const API: {
 	}),
 	default: createApi({}),
 };
+
+// Stamp the unstable-signal headers on every experimental response. Registered
+// here, at module load, so it precedes any endpoint route registered later on
+// API.experimental (Hono runs `.use` middleware in registration order).
+API.experimental.router.use(experimentalWarningMiddleware());
 
 settings.watch<string>('Accounts_CustomFields', (value) => {
 	if (!value) {
