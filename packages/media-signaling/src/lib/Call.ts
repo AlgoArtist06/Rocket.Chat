@@ -1204,7 +1204,7 @@ export class ClientMediaCall implements IClientMediaCall {
 			case 'hangup':
 				return this.flagAsEnded('remote', signal.hangupReason);
 			case 'escalated':
-				return this.flagAsEscalated();
+				return this.flagAsEscalated(signal.features);
 		}
 	}
 
@@ -1272,12 +1272,15 @@ export class ClientMediaCall implements IClientMediaCall {
 		this.changeState('hangup');
 	}
 
-	private flagAsEscalated(): void {
+	private flagAsEscalated(overrideFeatures?: CallFeature[]): void {
 		if (this.escalated) {
 			return;
 		}
 
-		this.config.logger?.debug('ClientMediaCall.flagAsEscalated');
+		this.config.logger?.debug('ClientMediaCall.flagAsEscalated', overrideFeatures || '');
+		if (overrideFeatures) {
+			this.enabledFeatures = overrideFeatures;
+		}
 
 		this.escalated = true;
 		this.emitter.emit('escalated');
