@@ -13,7 +13,7 @@ import { useHighlightedCode } from '../../../../../hooks/useHighlightedCode';
 const HistoryItem = ({ data }: { data: Serialized<IIntegrationHistory> }) => {
 	const { t } = useTranslation();
 
-	const replayOutgoingIntegration = useEndpoint('POST', '/v1/integrations.outgoing.replay');
+	const replayOutgoingIntegration = useEndpoint('POST', '/v1/integrations.replayOutgoing');
 
 	const {
 		_id,
