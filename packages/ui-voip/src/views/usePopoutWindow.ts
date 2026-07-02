@@ -99,7 +99,7 @@ type UsePopoutWindowReturn = {
 	closePopoutWindow: ClosePopoutWindow;
 };
 
-export const usePopoutWindow = (onBeforeUnload: () => void): UsePopoutWindowReturn => {
+export const usePopoutWindow = (onPageClose: () => void): UsePopoutWindowReturn => {
 	const popoutRef = useRef<PopoutRef | null>(null);
 	const [container, setContainer] = useState<PopoutContainer | null>(null);
 	const { t } = useTranslation();
@@ -116,7 +116,7 @@ export const usePopoutWindow = (onBeforeUnload: () => void): UsePopoutWindowRetu
 			try {
 				const result = await openExternalWindow(callId, theme);
 				if (!result) {
-					onBeforeUnload();
+					onPageClose();
 				}
 				const { root, externalWindow } = result;
 				popoutRef.current = { root, externalWindow, closing: false };
@@ -124,10 +124,10 @@ export const usePopoutWindow = (onBeforeUnload: () => void): UsePopoutWindowRetu
 			} catch (error) {
 				dispatchToastMessage({ type: 'error', message: t('Failed_to_open_call_window') });
 				console.error('Failed to open popout', error);
-				onBeforeUnload();
+				onPageClose();
 			}
 		},
-		[onBeforeUnload, theme, dispatchToastMessage, t],
+		[onPageClose, theme, dispatchToastMessage, t],
 	);
 
 	const closePopoutWindow = useCallback(() => {
@@ -142,13 +142,27 @@ export const usePopoutWindow = (onBeforeUnload: () => void): UsePopoutWindowRetu
 		const externalWindow = popoutRef.current?.externalWindow;
 		if (!externalWindow || !container) return;
 
-		const handleBeforeUnload = () => {
-			if (popoutRef.current) {
-				popoutRef.current.closing = true;
+		let unloading = false;
+		const handleVisibilityChange = () => {
+			console.log('visibilitychange', externalWindow.document.visibilityState);
+			console.log('visibilitychange.closed', externalWindow.closed);
+			externalWindow.removeEventListener('visibilitychange', handleVisibilityChange);
+			if (externalWindow.closed || externalWindow.document.visibilityState === 'hidden') {
+				if (popoutRef.current) {
+					popoutRef.current.closing = true;
+				}
+				onPageClose();
+				popoutRef.current = null;
+				setContainer(null);
+				onPageClose();
 			}
-			onBeforeUnload();
-			popoutRef.current = null;
-			setContainer(null);
+		};
+
+		const handleBeforeUnload = (e: Event) => {
+			unloading = true;
+			e.preventDefault();
+			e.returnValue = true;
+			// setTimeout(() => {
 		};
 
 		externalWindow.addEventListener('beforeunload', handleBeforeUnload);
@@ -158,7 +172,7 @@ export const usePopoutWindow = (onBeforeUnload: () => void): UsePopoutWindowRetu
 			externalWindow.removeEventListener('beforeunload', handleBeforeUnload);
 			window.removeEventListener('beforeunload', closePopoutWindow);
 		};
-	}, [container, onBeforeUnload, closePopoutWindow]);
+	}, [container, onPageClose, closePopoutWindow]);
 
 	useEffect(() => {
 		if (!container) {
