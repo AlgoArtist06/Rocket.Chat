@@ -2,6 +2,7 @@ import type { IWorkspaceCredentials } from '@rocket.chat/core-typings';
 import { WorkspaceCredentials } from '@rocket.chat/models';
 
 import { getWorkspaceAccessTokenWithScope } from './getWorkspaceAccessTokenWithScope';
+import { hasOfflineLicense } from './offlineLicense';
 import { retrieveRegistrationStatus } from './retrieveRegistrationStatus';
 import { workspaceScopes } from '../../../app/cloud/server/oauthScopes';
 import { SystemLogger } from '../logger/system';
@@ -23,6 +24,10 @@ export async function getWorkspaceAccessToken(forceNew = false, scope = '', save
 	const { workspaceRegistered } = await retrieveRegistrationStatus();
 
 	if (!workspaceRegistered) {
+		return '';
+	}
+
+	if (hasOfflineLicense()) {
 		return '';
 	}
 
