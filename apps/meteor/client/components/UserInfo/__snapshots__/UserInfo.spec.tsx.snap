@@ -1493,12 +1493,12 @@ exports[`renders WithVoiceCallExtension without crashing 1`] = `
                     >
                       <dt
                         class="rcx-box rcx-box--full rcx-css-1n8o8rn"
-                        id=":r9:"
+                        id="_r_9_"
                       >
                         Username
                       </dt>
                       <dd
-                        aria-labelledby=":r9:"
+                        aria-labelledby="_r_9_"
                         class="rcx-box rcx-box--full rcx-css-6hwe8l rcx-css-faoni4"
                       >
                         guilherme.gazzo

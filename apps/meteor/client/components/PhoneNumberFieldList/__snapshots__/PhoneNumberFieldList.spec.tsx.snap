@@ -55,7 +55,7 @@ exports[`PhoneNumberFieldList snapshots matches snapshot with phones 1`] = `
           >
             <label
               class="rcx-box rcx-box--full rcx-field__label rcx-label"
-              for="react-aria-:r0:-label"
+              for="react-aria-_r_0_-label"
               style="border: 0px; clip-path: inset(50%); height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap;"
             >
               Phone number 1
@@ -64,7 +64,7 @@ exports[`PhoneNumberFieldList snapshots matches snapshot with phones 1`] = `
               aria-describedby=""
               aria-invalid="false"
               class="rcx-box rcx-box--full rcx-box--animated rcx-input-box--type-tel rcx-input-box rcx-css-t3n91h"
-              id="react-aria-:r0:-label"
+              id="react-aria-_r_0_-label"
               name="phones.0.number"
               placeholder="Phone number"
               size="1"
@@ -77,7 +77,7 @@ exports[`PhoneNumberFieldList snapshots matches snapshot with phones 1`] = `
           >
             <label
               class="rcx-box rcx-box--full rcx-field__label rcx-label"
-              for="react-aria-:r1:-label"
+              for="react-aria-_r_1_-label"
               style="border: 0px; clip-path: inset(50%); height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap;"
             >
               Label for phone number 1
@@ -86,7 +86,7 @@ exports[`PhoneNumberFieldList snapshots matches snapshot with phones 1`] = `
               aria-describedby=""
               aria-invalid="false"
               class="rcx-box rcx-box--full rcx-box--animated rcx-input-box--type-text rcx-input-box rcx-css-t3n91h"
-              id="react-aria-:r1:-label"
+              id="react-aria-_r_1_-label"
               name="phones.0.label"
               placeholder="Label"
               size="1"
@@ -118,7 +118,7 @@ exports[`PhoneNumberFieldList snapshots matches snapshot with phones 1`] = `
           >
             <label
               class="rcx-box rcx-box--full rcx-field__label rcx-label"
-              for="react-aria-:r2:-label"
+              for="react-aria-_r_2_-label"
               style="border: 0px; clip-path: inset(50%); height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap;"
             >
               Phone number 2
@@ -127,7 +127,7 @@ exports[`PhoneNumberFieldList snapshots matches snapshot with phones 1`] = `
               aria-describedby=""
               aria-invalid="false"
               class="rcx-box rcx-box--full rcx-box--animated rcx-input-box--type-tel rcx-input-box rcx-css-t3n91h"
-              id="react-aria-:r2:-label"
+              id="react-aria-_r_2_-label"
               name="phones.1.number"
               placeholder="Phone number"
               size="1"
@@ -140,7 +140,7 @@ exports[`PhoneNumberFieldList snapshots matches snapshot with phones 1`] = `
           >
             <label
               class="rcx-box rcx-box--full rcx-field__label rcx-label"
-              for="react-aria-:r3:-label"
+              for="react-aria-_r_3_-label"
               style="border: 0px; clip-path: inset(50%); height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap;"
             >
               Label for phone number 2
@@ -149,7 +149,7 @@ exports[`PhoneNumberFieldList snapshots matches snapshot with phones 1`] = `
               aria-describedby=""
               aria-invalid="false"
               class="rcx-box rcx-box--full rcx-box--animated rcx-input-box--type-text rcx-input-box rcx-css-t3n91h"
-              id="react-aria-:r3:-label"
+              id="react-aria-_r_3_-label"
               name="phones.1.label"
               placeholder="Label"
               size="1"
