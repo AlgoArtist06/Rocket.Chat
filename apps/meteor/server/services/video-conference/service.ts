@@ -1232,20 +1232,6 @@ export class VideoConfService extends ServiceClassInternal implements IVideoConf
 			return provider.customizeUrl(call, userData, options);
 		}
 
-		const userData = user && {
-			_id: user._id,
-			username: user.username as string,
-			name: user.name as string,
-			avatarETag: user.avatarETag || null,
-			ts: new Date(),
-		};
-
-		const provider = videoConfProviders.getVideoConfProviderHandler(call.providerName);
-		if (provider) {
-			// TODO: compensate for the call title?
-			return provider.customizeUrl(call, userData);
-		}
-
 		const callData: VideoConfDataExtended = {
 			_id: call._id,
 			type: call.type,
