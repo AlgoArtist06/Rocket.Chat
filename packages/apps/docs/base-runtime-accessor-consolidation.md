@@ -21,9 +21,24 @@ what it actually needs from the host, and lays out a phased plan to:
    originated by accessors.
 
 **Governing decision (per project direction):** wherever the base-runtime implementation and
-`src/server/accessors/` have drifted, **the runtime behavior supersedes the host behavior**. The
-runtime implementations are what apps actually experience in production today (the host copies of
-those code paths are unreachable from the subprocess), so they are canonical by definition.
+`src/server/accessors/` have drifted, **merge the non-conflicting logic from both sides; on a genuine
+conflict, the runtime behavior supersedes the host behavior.** The runtime implementations are what
+apps actually experience in production today (the host copies of those code paths are unreachable
+from the subprocess), so they are canonical wherever the two truly diverge.
+
+Two refinements make this rule safe rather than a blanket "runtime wins":
+
+- **The merge rule is direction-aware.** For **MOVE** accessors the host is authoritative today (the
+  app hits it through the proxy), so merging *preserves* live behavior and folding in whatever the
+  runtime already does is safe; conflicts resolve to the runtime. For **RECONCILE** accessors the
+  runtime is authoritative today, so merging a piece of *host-only* logic the runtime currently lacks
+  **adds new observable behavior to production** — it is a deliberate change (tested + noted in the
+  CHANGELOG), never a "neutral" reconciliation.
+- **Drift is classified before adoption (see §3).** Where the runtime is a superset of or
+  semantically equivalent to the host, adopt it silently. Where the runtime *dropped or changed*
+  observable behavior (e.g. drift #1 diff-vs-full-object, #6 BlockBuilder appId), require a one-line
+  justification that the drop is intentional and harmless, backed by a test that pins the resulting
+  shape — so the migration cannot silently immortalize an accidental regression as the contract.
 
 ---
 
@@ -192,26 +207,39 @@ shapes, so **the wire semantics don't change, only the message prefix does**. Th
 
 ---
 
-## 3. Drift findings and decisions (runtime supersedes)
+## 3. Drift resolution table (the both-sides subset only)
 
-Comparing the base-runtime implementations against their host counterparts surfaced real behavioral
-drift. Per the governing decision, the **runtime behavior is canonical** in every case. Since the
-host copies of these paths are unreachable from subprocess apps, adopting the runtime behavior
-changes nothing observable — it just makes the de facto behavior the documented one.
+This table is the per-accessor resolution for the **bounded subset of accessors that carry logic on
+*both* sides today** — the RECONCILE accessors plus the few MOVE accessors that are already partially
+local. Pure-proxy MOVE accessors (the Reader family etc.) have **no runtime counterpart to
+reconcile** and are deliberately excluded: they are faithful-ported and verified by the parity check
+(§6), not by this table.
 
-| # | Drift | Decision |
-| --- | --- | --- |
-| 1 | **Update payload shape** — host `ModifyUpdater._finishMessage/_finishRoom` send the *full* builder object to `doUpdate`; runtime sends a *diff* (`{ id, ...builder.getChanges() }`). | Diff semantics are canonical. Bridges demonstrably accept the diff (it is what production sends). Delete the host full-object path. |
-| 2 | **Editor tracking** — runtime `ModifyUpdater.message()` calls `builder.setEditor(editor)`; host ignores the updater param. | Runtime wins: editor is recorded on update. |
-| 3 | **`typing()` awaits** — runtime `Notifier` awaits `doTyping` start/stop; host fires-and-forgets. | Runtime wins (awaited). |
-| 4 | **`createToken`** — runtime generates `randomBytes(16).toString('hex')` locally; host generated it host-side. | Runtime wins (local generation; same format). |
-| 5 | **HTTP method representation** — runtime uses lowercase string literals; host used the `RequestMethod` enum. | Runtime wins; the `doCall` payload shape is identical. |
-| 6 | **`BlockBuilder` appId** — host `getBlockBuilder()` passes appId into the builder; runtime builder takes none (ids assigned later via `UIHelper.assignIds` with the registry appId). | Runtime wins. |
-| 7 | **`APP_ID` placeholder inconsistency** — exactly one runtime call site (`ModifyCreator._finishMessage` → `doGetAppUser`) sends the anti-impersonation `'APP_ID'` placeholder; every other runtime bridge call sends the raw `AppObjectRegistry.get('id')`. | Not a "pick one side" drift — this is a normalization task: **all** bridge params that denote the calling app must use `'APP_ID'` (§5.2). Host substitution already handles it. |
-| 8 | Cosmetic error-message wording differences (e.g. "can not" vs "can't"). | Runtime wording wins; not worth preserving host strings. |
+Each row is resolved under the governing rule: **merge non-conflicting logic; runtime supersedes on
+conflict.** The `Class` column records which of the three cases applies:
 
-Rule for the newly-ported accessors (Reader family etc.): those have no runtime counterpart yet, so
-the host logic is ported as-is — there is nothing to supersede. Where a ported accessor interacts
+- **superset/equiv** — runtime already covers the host behavior (or is a strict superset); adopt
+  silently, no observable change.
+- **conflict→runtime** — the two genuinely diverge for the same input; the runtime wins, and because
+  the runtime is authoritative today this is still observationally neutral for production.
+- **merge (host→runtime)** — host-only logic is folded *into* the live runtime accessor; this **adds
+  observable behavior to production** and must ship with a test + CHANGELOG note (per the
+  direction-aware rule in the Summary).
+
+| # | Drift | Class | Decision |
+| --- | --- | --- | --- |
+| 1 | **Update payload shape** — host `ModifyUpdater._finishMessage/_finishRoom` send the *full* builder object to `doUpdate`; runtime sends a *diff* (`{ id, ...builder.getChanges() }`). | conflict→runtime | Diff semantics win. Bridges demonstrably accept the diff (it is what production sends). Delete the host full-object path. **Observable-drop → pin the diff shape with a test** confirming the reduced payload is intentional. |
+| 2 | **Editor tracking** — runtime `ModifyUpdater.message()` calls `builder.setEditor(editor)`; host ignores the updater param. | superset/equiv | Runtime wins: editor is recorded on update (runtime is a superset). |
+| 3 | **`typing()` awaits** — runtime `Notifier` awaits `doTyping` start/stop; host fires-and-forgets. | superset/equiv | Runtime wins (awaited). |
+| 4 | **`createToken`** — runtime generates `randomBytes(16).toString('hex')` locally; host generated it host-side. | conflict→runtime | Runtime wins (local generation; same format). |
+| 5 | **HTTP method representation** — runtime uses lowercase string literals; host used the `RequestMethod` enum. | superset/equiv | Runtime wins; the `doCall` payload shape is identical. |
+| 6 | **`BlockBuilder` appId** — host `getBlockBuilder()` passes appId into the builder; runtime builder takes none (ids assigned later via `UIHelper.assignIds` with the registry appId). | conflict→runtime | Runtime wins. **Observable-drop → require a one-line justification that dropping the constructor appId is intentional (ids are assigned later) and a test pinning the resulting block shape**, so an incomplete port is not blessed as the contract. |
+| 7 | **`APP_ID` placeholder inconsistency** — exactly one runtime call site (`ModifyCreator._finishMessage` → `doGetAppUser`) sends the anti-impersonation `'APP_ID'` placeholder; every other runtime bridge call sends the raw `AppObjectRegistry.get('id')`. | normalization | Not a "pick one side" drift — this is a normalization task: **all** bridge params that denote the *calling app* must use `'APP_ID'` (§5.2). Host substitution already handles it. Params that are app-supplied *arguments* (not caller identity) stay raw — see the exception list in §5.2. |
+| 8 | Cosmetic error-message wording differences (e.g. "can not" vs "can't"). | conflict→runtime | Runtime wording wins; not worth preserving host strings. |
+
+Rule for the newly-ported (pure-proxy MOVE) accessors — Reader family etc.: those have no runtime
+counterpart yet, so the host logic is ported as-is — there is nothing to supersede, and correctness
+is guaranteed by the parity check (§6) rather than by this table. Where a ported accessor interacts
 with a reconciled one, the reconciled (runtime) semantics apply.
 
 ---
@@ -256,15 +284,24 @@ Design points:
 - **Conflict-tracking errors** (`CommandAlreadyExistsError`, `CommandHasAlreadyBeenTouchedError`,
   `PathAlreadyExistsError`, `VideoConfProviderAlreadyExistsError`) also propagate as JSON-RPC errors,
   same as today.
-- **The restart hijack moves with it.** Today `handleAccessorMessage` short-circuits any
-  `getConfigurationExtend` call to `success(null)` while the controller is `restarting` (re-running
-  `app:initialize` must not re-register resources, but the subprocess must still rebuild its local
-  `AppObjectRegistry` entries). The same guard is applied in `handleBridgeMessage` for
-  `AppResourceBridge` registration methods (`doProvide*` / `doRegister*` — *not* the read/update
-  methods) while `state === 'restarting'`. The runtime-side `_proxy` wrappers keep stashing the live
-  instances into `AppObjectRegistry` *before* the RPC, so local re-registration still works during
-  restarts. (A cleaner long-term fix — an explicit `reinitialize` mode telegraphed to the subprocess
-  — is listed as a follow-up, not a prerequisite.)
+- **The restart hijack moves with it — via an explicit method set, not a name prefix.** Today
+  `handleAccessorMessage` short-circuits any `getConfigurationExtend` call to `success(null)` while
+  the controller is `restarting` (re-running `app:initialize` must not re-register resources, but the
+  subprocess must still rebuild its local `AppObjectRegistry` entries). Today's guard is clean
+  because it keys on the accessor *origin* (`getConfigurationExtend`), which structurally captures the
+  whole registration surface. The bridge equivalent must **not** re-derive that boundary from method
+  name prefixes like `doProvide*`/`doRegister*` — that is a convention-dependent footgun (a future
+  registration method named otherwise would double-register during restart; a future non-registration
+  method matching the prefix would be silently dropped). Instead, `AppResourceBridge` exposes an
+  explicit static `REGISTRATION_METHODS` set enumerating exactly the method names that must be
+  suppressed during restart (the `doProvide*`/`doRegister*` registrations — *not* the read/update
+  methods `doGetAppSetting`/`doUpdateAppSetting`/`doModifySlashCommand`/`doEnable*`/`doDisable*`/
+  `doListApis`), and `handleBridgeMessage` consults that set while `state === 'restarting'`. This
+  keeps the guarded surface auditable and decoupled from naming discipline. The runtime-side `_proxy`
+  wrappers keep stashing the live instances into `AppObjectRegistry` *before* the RPC, so local
+  re-registration still works during restarts. This is a stopgap: the real fix — an explicit
+  `reinitialize` mode telegraphed to the subprocess (follow-up #2) — should be referenced in a comment
+  at the guard site, and is not a prerequisite here.
 
 ### Deal breakers considered, and why this is the best compromise
 
@@ -304,13 +341,44 @@ Ported accessors then keep their host shape (`constructor(bridge, appId)`,
 (`Http`, `Notifier`, `Modify*`) are refactored onto the same facade, deleting their bespoke
 `senderFn` plumbing.
 
+**The facade must not auto-inject `'APP_ID'`.** Identity is passed *explicitly* by each ported
+accessor (positionally, exactly as the host accessor did), so a faithful copy keeps caller-identity
+params carrying the `'APP_ID'` sentinel and leaves app-supplied argument-appIds raw *by
+construction*. Centralizing injection in the facade is cleaner but would make the argument-appId
+exceptions (below) the dangerous default — a mechanical port across ~30 classes must not depend on
+the facade guessing which appIds are identity vs. argument.
+
 ### 5.2 `APP_ID` placeholder everywhere
 
-All bridge params denoting the calling app use the `'APP_ID'` literal; the host substitutes the real
-id. This fixes today's inconsistency (§3 #7), removes the runtime's reliance on
-`AppObjectRegistry.get('id')` for identity (it remains available for non-identity uses like
-`UIHelper.assignIds` block-id prefixes and scheduler job-id suffixes), and makes impersonation
-structurally impossible for the whole accessor surface.
+All bridge params denoting the *calling app* use the `'APP_ID'` literal; the host substitutes the
+real id (value-based substitution at `BaseRuntimeSubprocessController.ts:548`). This fixes today's
+inconsistency (§3 #7), removes the runtime's reliance on `AppObjectRegistry.get('id')` for identity
+(it remains available for non-identity uses like `UIHelper.assignIds` block-id prefixes and scheduler
+job-id suffixes), and makes impersonation structurally impossible for the whole accessor surface.
+
+**This is a per-param judgment that can fail in *both* directions**, so it must be applied
+deliberately, not mechanically:
+
+- **Over-normalizing** a genuine app-supplied argument-appId → the app loses the ability to pass any
+  appId and can only ever act as itself (a silent behavior change).
+- **Under-normalizing** a caller-identity param → re-opens exactly the impersonation gap this section
+  closes.
+
+Because neither failure is caught by the type-checker or a green test suite, produce an **up-front
+exception list (Phase 0 artifact)** of every `do*` param where the appId is an *app-supplied
+argument, not caller identity* — those stay raw and must **not** be normalized. Known members
+(audit for others when porting):
+
+- `ModerationBridge.doReport(messageId, description, userId, appId)`
+- `ModerationBridge.doDismissReportsByMessageId(messageId, reason, action, appId)`
+- `ModerationBridge.doDismissReportsByUserId(userId, reason, action, appId)`
+
+(`ModerationModify` already ignores its constructor `_appId` and forwards the app-supplied method-arg
+`appId`; the faithful port preserves this, so keeping APP_ID explicit per §5.1 handles it naturally.)
+
+The longer-term home for this is a consolidated host↔subprocess protocol/SDK (follow-up #6) — a
+single typed manifest of every method and its accepted params — for which this exception list is the
+seed.
 
 ### 5.3 Module-resolution constraints (the original reason for the proxies)
 
@@ -323,12 +391,20 @@ Rules for the moved code:
   `node:` builtins, and npm deps already present in `deno.jsonc`'s import map / Deno cache.
   This holds for every accessor being moved — they import definition types, and the few utilities
   below.
-- **`UIHelper` moves into base-runtime** (`base-runtime/src/lib/UIHelper.ts` or similar). It is a
-  small pure helper needed by `ModifyCreator`/`ModifyUpdater`/`UIController`; the runtime currently
-  imports it from `@rocket.chat/apps/dist/server/misc/UIHelper` — exactly the fragile dist-CJS
-  import the runtime otherwise avoids. The host imports it from the new location (via the built
-  base-runtime dist, or the file simply lives where both tsconfigs can see it); at minimum the
-  runtime copy becomes the source of truth.
+- **`UIHelper` is duplicated into base-runtime — not shared cross-package.** It is a small pure
+  helper (imports only `node:crypto` plus two *type-only* imports, `IBlock` and `LayoutBlock`, which
+  are erased at transpile and so need no import-map entry) needed by
+  `ModifyCreator`/`ModifyUpdater`/`UIController`. The runtime currently imports it from
+  `@rocket.chat/apps/dist/server/misc/UIHelper` — exactly the fragile dist-CJS import the runtime
+  otherwise avoids. **Do not make the host import it back from base-runtime**: base-runtime already
+  imports `apps/dist` (host output), so a host→base-runtime dist import would create an
+  unlinearizable *build cycle* (and "flip the order" only moves the cycle). Instead, in Phase 0 copy
+  `UIHelper` into `base-runtime/src/lib/` (the runtime immediately stops importing the `apps/dist`
+  path) while leaving the `src/server/misc/UIHelper.ts` copy untouched for the still-living host
+  accessors. All three of its `src/` importers (`ModifyCreator`, `ModifyUpdater`, `UIController`) are
+  MOVE accessors deleted by this migration, so the `src/` copy is deleted in Phase 4 teardown —
+  achieving a single source of truth *at teardown* with no cross-package import and no build-order
+  change. A transient duplicate of a ~30-line pure helper is cheaper than a build-graph cycle.
 - Other tiny helpers to carry over: `createProcessorId` (already duplicated as a local function in
   `SchedulerModify.ts` — stays a local function), the `GetMessagesSortableFields` /
   sort-validation logic in `RoomRead` (constants come from apps-engine definitions).
@@ -366,17 +442,37 @@ since consolidating more logic into the runtime makes the assumption more load-b
 - **Validation inside the sandbox is advisory.** Unchanged in practice (see §1.1), but the migration
   makes it explicit. Hard limits that matter (e.g. `getMessages` limit ≤ 100,
   `removeUsersFromRoom` ≤ 50) should eventually be enforced in the bridges (§7).
-- **Two implementations exist transiently during the phased rollout.** Mitigated by porting tests
-  first (§8 per-phase) and deleting each host class in the same PR that flips its runtime
-  counterpart from proxy to local — "one source of truth" is enforced per-accessor, per-PR, not in a
-  single big-bang.
+- **Two implementations exist transiently during the phased rollout.** Mitigated by deleting each
+  host class in the same PR that flips its runtime counterpart from proxy to local — "one source of
+  truth" is enforced **per-accessor, per-PR** (see §8: a phase is a milestone, not a single PR), not
+  in a big-bang.
+
+- **"Faithful port" of MOVE accessors is verified, not asserted.** For MOVE accessors the host logic
+  is *live in production today* (the app reaches it through the proxy), so a subtly wrong port — a
+  dropped default, an off-by-one on a cap, a renamed sort field — is an immediate observable
+  regression. Ported unit tests only prove the new class satisfies carried-over assertions; they do
+  **not** prove equivalence with the old class, so a port that drops an uncovered branch passes green.
+  Therefore, before deleting each host MOVE class, gate it on a **mechanical parity check**: either a
+  transitional differential harness that drives a representative set of calls through *both* the old
+  proxy path and the new local path and asserts identical bridge-message output (method string +
+  params) and identical return shaping, or — where a differential harness is too heavy — an
+  **enforced branch-coverage audit** of the ported tests against the host source (every validation
+  branch, default, and error path pinned). The differential harness is throwaway and is removed in
+  Phase 4 teardown. (RECONCILE accessors do not need this — their host copy is already unreachable —
+  but their merge decisions are governed by §3 and the direction-aware rule instead.)
 
 ---
 
 ## 7. Follow-ups (out of scope, unblocked or motivated by this work)
 
 1. **Bridge-level input hardening** — move load-bearing caps/validation into bridge `do*` wrappers
-   (they are the real trust boundary).
+   (they are the real trust boundary). **Framing:** these caps (`getMessages` ≤ 100,
+   `removeUsersFromRoom` ≤ 50, …) are *already* bypassable **today**, pre-migration — app code runs
+   via `new Function` in the runtime's own JS realm (globals are merely shadowed, not a security
+   boundary; see `construct.ts`) and can reach the messenger to emit arbitrary `bridges:*` messages.
+   So this migration introduces **no new exposure**; it only makes the existing advisory-ness visible.
+   This is therefore an independent security-hardening item, decoupled from and non-blocking for this
+   refactor — track it on its own, not as a tail of the migration.
 2. **Replace the restart registration guard** with an explicit `reinitialize` request so the
    subprocess knows not to re-send registrations, removing controller-state-dependent message
    dropping.
@@ -387,27 +483,51 @@ since consolidating more logic into the runtime makes the assumption more load-b
    `AppOutboundCommunicationProvider.runTheCode` signatures.
 5. **Multi-app-per-process** would require replacing `AppObjectRegistry`'s global `id` — explicitly
    not attempted here.
+6. **Consolidated host↔subprocess protocol/SDK** — a single typed manifest of every host-bound method
+   and its accepted params (the §5.2 explicit method/exception list is the seed), replacing today's
+   hand-rolled message strings and per-param normalization judgment with a declared contract. A
+   phase *after* this migration, not a prerequisite; this work should produce the explicit list, the
+   SDK formalizes it.
 
 ---
 
 ## 8. Phased implementation plan
 
-Each phase is independently shippable and keeps both test suites (`test:node`/`test:deno`/
-`test:base-runtime`) green. Host accessor tests in `packages/apps/tests/server/accessors/` are
-ported to `base-runtime/src/lib/accessors/tests/` *in the phase that moves the accessor*, and the
-host class + its tests are deleted in that same phase.
+**A phase is a milestone, not a single PR.** Each phase is independently shippable and keeps both
+test suites (`test:node`/`test:deno`/`test:base-runtime`) green, but the *unit of merge* is the
+accessor, not the phase — Phases 1 and 2 in particular are landed as a **series of per-accessor (or
+tight cohesive-group, e.g. the three `Scheduler*` pieces) PRs**, so blast radius per merge is one
+accessor family rather than a whole family of thirteen. This matters because the migration flips
+*live production behavior* for MOVE accessors with no rollback but `git revert`, and the unit of
+revert equals the unit of merge. Phases 0, 3, and 4 have genuinely atomic units (the facade;
+`AppResourceBridge` + guard; the teardown) and may stay coarser.
+
+Host accessor tests in `packages/apps/tests/server/accessors/` are ported to
+`base-runtime/src/lib/accessors/tests/` *in the PR that moves the accessor*, and the host class + its
+tests are deleted in that same PR — gated, for MOVE accessors, on the parity check (§6).
 
 ### Phase 0 — Foundations (no behavior change)
 
 1. Add `RemoteBridges` facade (§5.1) with tests (message-string generation, `do*` gate, error
-   formatting).
-2. Refactor existing runtime accessors (`Http`, `Notifier`, `ModifyCreator`, `ModifyUpdater`,
-   `ModifyExtender`, `roomFactory`) onto `RemoteBridges`; normalize every app-identity param to
-   `'APP_ID'` (§5.2).
-3. Move `UIHelper` into base-runtime; repoint the host import (§5.3).
-4. Land this document's drift decisions as the recorded contract (link from CHANGELOG).
+   formatting). The facade does **not** auto-inject `'APP_ID'` — identity stays an explicit
+   positional arg (§5.1).
+2. Produce the **APP_ID exception list** (§5.2) — the audited set of `do*` params where the appId is
+   an app-supplied argument, not caller identity (known seed: the three `ModerationBridge` methods).
+3. Refactor existing runtime accessors (`Http`, `Notifier`, `ModifyCreator`, `ModifyUpdater`,
+   `ModifyExtender`, `roomFactory`) onto `RemoteBridges`; normalize every *caller-identity* param to
+   `'APP_ID'` (§5.2), leaving argument-appIds raw per the exception list.
+4. **Duplicate** `UIHelper` into `base-runtime/src/lib/` so the runtime stops importing the
+   `apps/dist` path; leave the `src/server/misc/UIHelper.ts` copy for the still-living host accessors
+   (deleted in Phase 4). No cross-package import, no build-order flip (§5.3).
+5. Stand up the transitional **parity harness** scaffolding (§6) used to gate MOVE-accessor deletions
+   in Phases 1–2.
+6. Land this document's drift decisions (§3) and the direction-aware merge rule as the recorded
+   contract (link from CHANGELOG).
 
 ### Phase 1 — Reader family + Persistence + Environment (server-side settings)
+
+*Landed as one PR per accessor (or tight group); each PR ports the accessor, flips its `mod.ts`
+proxy entry to local, passes the §6 parity check, then deletes the host class + its tests.*
 
 1. Port to base-runtime: `MessageRead`, `RoomRead`, `UserRead`, `PersistenceRead`, `LivechatRead`,
    `UploadRead`, `CloudWorkspaceRead`, `VideoConferenceRead`, `OAuthAppsReader`, `ContactRead`,
@@ -421,6 +541,10 @@ host class + its tests are deleted in that same phase.
 3. Delete the host classes + prune `AppAccessorManager` construction accordingly; port tests.
 
 ### Phase 2 — Modify family completion
+
+*Same cadence as Phase 1: one PR per accessor (or tight group), parity-checked before the host class
+is deleted. RECONCILE members (`ModifyCreator`/`ModifyUpdater`/`ModifyExtender`/`Notifier`) follow §3
++ the direction-aware merge rule instead of the parity check.*
 
 1. Port: `ModifyDeleter`, `MessageUpdater`, `LivechatUpdater`, `UserUpdater`, `LivechatCreator`,
    `UploadCreator`, `EmailCreator`, `ContactCreator`, `UIController`, `SchedulerModify`,
@@ -451,7 +575,10 @@ host class + its tests are deleted in that same phase.
    `AppAccessorManager` (and its `purifyApp` call in `AppManager`), remove `proxify` from `mod.ts`,
    and drop the now-unused `getAccessorManager()` threading in managers (follow-up #4 can ride
    along).
-4. CHANGELOG entry; update any architecture docs referencing the accessor message category.
+4. Delete the `src/server/misc/UIHelper.ts` copy (its last importers are gone with the host
+   accessors), leaving the base-runtime copy as the single source of truth; remove the transitional
+   parity harness (§6).
+5. CHANGELOG entry; update any architecture docs referencing the accessor message category.
 
 **End state:** `BaseRuntimeSubprocessController` handles exactly one app-originated RPC category —
 `bridges:*` — with a single dispatcher, a single permission model, and a single accessor
