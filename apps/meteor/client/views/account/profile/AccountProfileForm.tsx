@@ -161,7 +161,6 @@ const AccountProfileForm = (props: AllHTMLAttributes<HTMLFormElement>) => {
 			dirtyFields.statusCustomDate ||
 			dirtyFields.statusCustomTime;
 
-
 		try {
 			await updateOwnBasicInfo({
 				data: {
