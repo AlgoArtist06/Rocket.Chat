@@ -11,6 +11,7 @@ import { hasPermissionAsync, hasAllPermissionAsync } from '../../../authorizatio
 import { disableCustomScripts } from '../functions/disableCustomScripts';
 import { methodDeprecationLogger } from '../lib/deprecationWarningLogger';
 import { notifyOnSettingChanged } from '../lib/notifyListener';
+import { validateSettingRules } from '../lib/settingValidationRules';
 
 declare module '@rocket.chat/ddp-client' {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -67,6 +68,13 @@ Meteor.methods<ServerMethods>({
 			default:
 				check(value, String);
 				break;
+		}
+
+		try {
+			validateSettingRules([{ _id, value }]);
+		} catch (error) {
+			// rethrow as Meteor.Error so the i18n key reaches the client (plain errors are masked as internal server errors)
+			throw new Meteor.Error('error-setting-validation-failed', error instanceof Error ? error.message : String(error));
 		}
 
 		const auditSettingOperation = updateAuditedByUser({
