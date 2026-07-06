@@ -30,10 +30,10 @@ import { saveSettingsBulk } from '../../../app/lib/server/functions/saveSettings
 import { checkSettingValueBounds } from '../../../app/lib/server/lib/checkSettingValueBonds';
 import { notifyOnSettingChanged, notifyOnSettingChangedById } from '../../../app/lib/server/lib/notifyListener';
 import { addOAuthServiceMethod } from '../../../app/lib/server/methods/addOAuthService';
-import { refreshOAuthServiceMethod } from '../../../app/lib/server/methods/refreshOAuthService';
-import { removeOAuthServiceMethod } from '../../../app/lib/server/methods/removeOAuthService';
+import { removeCustomOAuthSettings } from '../../../app/lib/server/methods/removeOAuthService';
 import { SettingsEvents, settings } from '../../../app/settings/server';
 import { setValue } from '../../../app/settings/server/raw';
+import { refreshLoginServices } from '../../lib/refreshLoginServices';
 import { updateAuditedByUser } from '../../settings/lib/auditedSettingUpdates';
 import { API } from '../api';
 import { getPaginationItems } from '../lib/getPaginationItems';
@@ -250,6 +250,9 @@ API.v1.post(
 	{
 		authRequired: true,
 		twoFactorRequired: true,
+		permissionsRequired: {
+			POST: { permissions: ['add-oauth-service'], operation: 'hasAll' },
+		},
 		body: addCustomOAuthBodySchema,
 		response: {
 			200: ajv.compile<void>({
@@ -269,7 +272,7 @@ API.v1.post(
 			throw new Meteor.Error('error-name-param-not-provided', 'The parameter "name" is required');
 		}
 
-		await removeOAuthServiceMethod(this.userId, name);
+		await removeCustomOAuthSettings(name);
 
 		return API.v1.success();
 	},
@@ -280,6 +283,9 @@ API.v1.post(
 	{
 		authRequired: true,
 		twoFactorRequired: true,
+		permissionsRequired: {
+			POST: { permissions: ['add-oauth-service'], operation: 'hasAll' },
+		},
 		response: {
 			200: ajv.compile<void>({
 				type: 'object',
@@ -293,7 +299,7 @@ API.v1.post(
 		},
 	},
 	async function action() {
-		await refreshOAuthServiceMethod(this.userId);
+		await refreshLoginServices();
 		return API.v1.success();
 	},
 );
