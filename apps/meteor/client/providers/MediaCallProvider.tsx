@@ -1,5 +1,5 @@
 import { Emitter } from '@rocket.chat/emitter';
-import { usePermission } from '@rocket.chat/ui-contexts';
+import { useCurrentRoutePath, usePermission } from '@rocket.chat/ui-contexts';
 import { MediaCallProvider as MediaCallProviderBase, MediaCallInstanceContext } from '@rocket.chat/ui-voip';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
@@ -9,6 +9,9 @@ import { useHasLicenseModule } from '../hooks/useHasLicenseModule';
 const MediaCallProvider = ({ children }: { children: ReactNode }) => {
 	const canMakeInternalCall = usePermission('allow-internal-voice-calls');
 	const canMakeExternalCall = usePermission('allow-external-voice-calls');
+	const currentRoute = useCurrentRoutePath();
+
+	const conferenceRoute = currentRoute?.includes('/conference');
 
 	const { data: hasModule = false } = useHasLicenseModule('teams-voip');
 
@@ -27,7 +30,7 @@ const MediaCallProvider = ({ children }: { children: ReactNode }) => {
 		[],
 	);
 
-	if (!hasModule || (!canMakeInternalCall && !canMakeExternalCall)) {
+	if (!hasModule || (!canMakeInternalCall && !canMakeExternalCall) || conferenceRoute) {
 		return <MediaCallInstanceContext.Provider value={unauthorizedContextValue}>{children}</MediaCallInstanceContext.Provider>;
 	}
 
