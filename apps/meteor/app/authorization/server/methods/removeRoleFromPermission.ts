@@ -1,8 +1,8 @@
 import type { ServerMethods } from '@rocket.chat/ddp-client';
 import { Meteor } from 'meteor/meteor';
 
+import { removeRoleFromPermissionMethod } from '../../../../server/lib/authorization/permissionRole';
 import { methodDeprecationLogger } from '../../../lib/server/lib/deprecationWarningLogger';
-import { removeRoleFromPermissionMethod } from '../functions/permissionRole';
 
 declare module '@rocket.chat/ddp-client' {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
