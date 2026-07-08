@@ -12,6 +12,7 @@ export interface IDirectMediaCallData {
 	readonly state: CallState;
 	readonly hidden: boolean;
 	readonly escalated: boolean;
+	readonly ringing: boolean;
 
 	readonly transferredBy: CallContact | null;
 

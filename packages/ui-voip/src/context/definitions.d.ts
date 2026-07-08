@@ -34,6 +34,7 @@ interface IBaseSession {
 	startedAt?: Date;
 	hidden: boolean;
 	escalated?: boolean;
+	ringing?: boolean;
 	supportedFeatures: readonly CallFeature[];
 	// True when the idle dialer ('new') is docked inside a slot (the sidebar call panel)
 	// rather than opened as a free-floating composer. A docked dialer must never render as
