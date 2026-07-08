@@ -116,13 +116,14 @@ Recommended light loop: `cd apps/meteor && yarn dev` in one terminal, and
 
 ## 4. Environment variables
 
-Copy the example and adjust if needed:
+Config is driven by `apps/meteor/.env`. On the first `yarn dev` this file is
+created automatically from [`apps/meteor/.env.example`](../apps/meteor/.env.example)
+(a fully commented inventory of the dev-relevant vars) — no manual copy needed.
+Edit `.env` and restart to apply.
 
-```bash
-cp apps/meteor/.env.example apps/meteor/.env
-```
-
-All vars are **optional** for the first run. The most used ones:
+All vars are **optional** for the first run. A var exported in your shell takes
+precedence over the file; comment one out to fall back to its default. The most
+used ones:
 
 | Var | Purpose |
 |-----|----------|
@@ -132,7 +133,10 @@ All vars are **optional** for the first run. The most used ones:
 | `MAIL_URL` | SMTP; without it, emails go to the console |
 | `ROCKETCHAT_LICENSE` | enables Enterprise (EE) features |
 
-Full commented list: [`apps/meteor/.env.example`](../apps/meteor/.env.example).
+> `.env` is loaded (via `dotenv-cli`) **before** the Meteor tool starts, so it
+> can drive Mongo selection too.
+
+Full commented list with every supported var: [`apps/meteor/.env.example`](../apps/meteor/.env.example).
 
 ---
 
