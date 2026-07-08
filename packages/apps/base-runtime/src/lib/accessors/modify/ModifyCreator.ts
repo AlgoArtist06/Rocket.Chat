@@ -1,6 +1,5 @@
 import { randomBytes } from 'node:crypto';
 
-import { UIHelper } from '@rocket.chat/apps/dist/server/misc/UIHelper';
 import type { IContactCreator } from '@rocket.chat/apps-engine/definition/accessors/IContactCreator';
 import type { IDiscussionBuilder } from '@rocket.chat/apps-engine/definition/accessors/IDiscussionBuilder';
 import type { IEmailCreator } from '@rocket.chat/apps-engine/definition/accessors/IEmailCreator';
@@ -20,6 +19,7 @@ import type { IBotUser } from '@rocket.chat/apps-engine/definition/users/IBotUse
 import type { IUser } from '@rocket.chat/apps-engine/definition/users/IUser';
 import { UserType } from '@rocket.chat/apps-engine/definition/users/UserType';
 
+import { UIHelper } from '../../../../../dist/server/misc/UIHelper';
 import { AppObjectRegistry } from '../../../AppObjectRegistry';
 import type * as Messenger from '../../messenger';
 import { BlockBuilder } from '../builders/BlockBuilder';

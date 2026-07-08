@@ -1,4 +1,3 @@
-import { UIHelper } from '@rocket.chat/apps/dist/server/misc/UIHelper';
 import type { ILivechatUpdater } from '@rocket.chat/apps-engine/definition/accessors/ILivechatUpdater';
 import type { IMessageBuilder } from '@rocket.chat/apps-engine/definition/accessors/IMessageBuilder';
 import type { IMessageUpdater } from '@rocket.chat/apps-engine/definition/accessors/IMessageUpdater';
@@ -11,6 +10,7 @@ import type { IRoom } from '@rocket.chat/apps-engine/definition/rooms/IRoom';
 import { RoomType } from '@rocket.chat/apps-engine/definition/rooms/RoomType.js';
 import type { IUser } from '@rocket.chat/apps-engine/definition/users/IUser';
 
+import { UIHelper } from '../../../../../dist/server/misc/UIHelper';
 import { AppObjectRegistry } from '../../../AppObjectRegistry';
 import type * as Messenger from '../../messenger';
 import { MessageBuilder } from '../builders/MessageBuilder';
