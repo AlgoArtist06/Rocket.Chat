@@ -1,5 +1,6 @@
 import { Random } from '@rocket.chat/random';
 
+import { integerBoundOrDisabled, notAboveSetting, notBelowSetting } from './lib/validationRuleBuilders';
 import { settingsRegistry } from '../../app/settings/server';
 
 export const createAccountSettings = () =>
@@ -827,15 +828,8 @@ export const createAccountSettings = () =>
 				public: true,
 				enableQuery,
 				validation: [
-					{
-						query: { $or: [{ value: -1 }, { value: { $gte: 1 } }] },
-						errorKey: 'Accounts_Password_Policy_MinLength_Invalid_Value',
-					},
-					{
-						query: { $or: [{ value: { $lt: 1 } }, { value: { $lte: { $setting: 'Accounts_Password_Policy_MaxLength' } } }] },
-						appliesWhen: { _id: 'Accounts_Password_Policy_MaxLength', value: { $gte: 1 } },
-						errorKey: 'Accounts_Password_Policy_MinLength_Invalid',
-					},
+					integerBoundOrDisabled('Accounts_Password_Policy_MinLength_Invalid_Value'),
+					notAboveSetting('Accounts_Password_Policy_MaxLength', 'Accounts_Password_Policy_MinLength_Invalid'),
 				],
 			});
 
@@ -844,14 +838,8 @@ export const createAccountSettings = () =>
 				public: true,
 				enableQuery,
 				validation: [
-					{
-						query: { $or: [{ value: -1 }, { value: { $gte: 1 } }] },
-						errorKey: 'Accounts_Password_Policy_MaxLength_Invalid_Value',
-					},
-					{
-						query: { $or: [{ value: { $lt: 1 } }, { value: { $gte: { $setting: 'Accounts_Password_Policy_MinLength' } } }] },
-						errorKey: 'Accounts_Password_Policy_MaxLength_Invalid',
-					},
+					integerBoundOrDisabled('Accounts_Password_Policy_MaxLength_Invalid_Value'),
+					notBelowSetting('Accounts_Password_Policy_MinLength', 'Accounts_Password_Policy_MaxLength_Invalid'),
 				],
 			});
 
