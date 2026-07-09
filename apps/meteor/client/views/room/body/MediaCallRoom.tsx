@@ -6,6 +6,7 @@ import {
 	usePeekMediaSessionState,
 	usePeekMediaSessionPeerInfo,
 	usePeekMediaSessionFeatures,
+	usePeekMediaSessionHidden,
 } from '@rocket.chat/ui-voip';
 import type { ReactNode } from 'react';
 import { memo } from 'react';
@@ -32,6 +33,7 @@ export type MediaCallRoomProps = {
 
 const MediaCallRoom = ({ children }: MediaCallRoomProps) => {
 	const state = usePeekMediaSessionState();
+	const hidden = usePeekMediaSessionHidden();
 	const peerInfo = usePeekMediaSessionPeerInfo();
 	const features = usePeekMediaSessionFeatures();
 	const room = useRoom();
@@ -42,7 +44,7 @@ const MediaCallRoom = ({ children }: MediaCallRoomProps) => {
 		return children;
 	}
 
-	if (state !== 'ongoing' || !isMediaCallRoom(room, peerInfo)) {
+	if (hidden || state !== 'ongoing' || !isMediaCallRoom(room, peerInfo)) {
 		return children;
 	}
 
