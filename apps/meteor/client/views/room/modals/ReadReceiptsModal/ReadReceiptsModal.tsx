@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import ReadReceiptRow from './ReadReceiptRow';
 import { mapReadReceiptFromApi } from '../../../../lib/utils/mapReadReceiptFromApi';
 
-type ReadReceiptsModalProps = {
+export type ReadReceiptsModalProps = {
 	messageId: IMessage['_id'];
 	rid?: IRoom['_id'];
 	onClose: () => void;
