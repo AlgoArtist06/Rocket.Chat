@@ -11,6 +11,7 @@ import { hasPermissionAsync } from '../../../authorization/server/functions/hasP
 import { settings } from '../../../settings/server';
 import { checkSettingValueBounds } from '../lib/checkSettingValueBonds';
 import { notifyOnSettingChangedById } from '../lib/notifyListener';
+import { validateSettingRules } from '../lib/settingValidationRules';
 
 const validJSON = Match.Where((value: string) => {
 	try {
@@ -111,6 +112,8 @@ export const saveSettingsBulk = async (
 			settingIds: settingsNotAllowed,
 		});
 	}
+
+	validateSettingRules(params);
 
 	const auditSettingOperation = updateAuditedByUser({
 		_id: uid,

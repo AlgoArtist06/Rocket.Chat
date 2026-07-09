@@ -5,7 +5,7 @@ import { Meteor } from 'meteor/meteor';
 import { twoFactorRequired } from '../../../2fa/server/twoFactorRequired';
 import { saveSettingsBulk } from '../functions/saveSettingsBulk';
 import { methodDeprecationLogger } from '../lib/deprecationWarningLogger';
-import { validateSettingRules } from '../lib/settingValidationRules';
+import { SettingValidationError } from '../lib/settingValidationRules';
 
 declare module '@rocket.chat/ddp-client' {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -36,17 +36,18 @@ Meteor.methods<ServerMethods>({
 		}
 
 		try {
-			validateSettingRules(params);
+			await saveSettingsBulk(uid, params, {
+				username: (await Meteor.userAsync())!.username!,
+				ip: this.connection.clientAddress || '',
+				useragent: this.connection.httpHeaders['user-agent'] || '',
+			});
 		} catch (error) {
-			// rethrow as Meteor.Error so the i18n key reaches the client (plain errors are masked as internal server errors)
-			throw new Meteor.Error('error-setting-validation-failed', error instanceof Error ? error.message : String(error));
+			if (error instanceof SettingValidationError) {
+				// rethrow as Meteor.Error so the i18n key reaches the client (plain errors are masked as internal server errors)
+				throw new Meteor.Error('error-setting-validation-failed', error.message);
+			}
+			throw error;
 		}
-
-		await saveSettingsBulk(uid, params, {
-			username: (await Meteor.userAsync())!.username!,
-			ip: this.connection.clientAddress || '',
-			useragent: this.connection.httpHeaders['user-agent'] || '',
-		});
 
 		return true;
 	}, {}),

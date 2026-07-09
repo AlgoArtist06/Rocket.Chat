@@ -29,7 +29,7 @@ import { disableCustomScripts } from '../../../app/lib/server/functions/disableC
 import { saveSettingsBulk } from '../../../app/lib/server/functions/saveSettingsBulk';
 import { checkSettingValueBounds } from '../../../app/lib/server/lib/checkSettingValueBonds';
 import { notifyOnSettingChanged, notifyOnSettingChangedById } from '../../../app/lib/server/lib/notifyListener';
-import { validateSettingRules } from '../../../app/lib/server/lib/settingValidationRules';
+import { SettingValidationError, validateSettingRules } from '../../../app/lib/server/lib/settingValidationRules';
 import { addOAuthServiceMethod } from '../../../app/lib/server/methods/addOAuthService';
 import { SettingsEvents, settings } from '../../../app/settings/server';
 import { setValue } from '../../../app/settings/server/raw';
@@ -426,19 +426,18 @@ API.v1.post(
 		},
 	},
 	async function action() {
-		// TODO(next major): unify both validations into one function with a common API error response
 		try {
-			validateSettingRules(this.bodyParams.settings);
+			await saveSettingsBulk(this.userId, this.bodyParams.settings, {
+				username: this.user.username ?? '',
+				ip: this.requestIp ?? '',
+				useragent: this.request.headers.get('user-agent') ?? '',
+			});
 		} catch (error) {
-			// the message is the i18n key; it becomes the response `error` so the client translates it
-			return API.v1.failure(error instanceof Error ? error.message : String(error), 'error-setting-validation-failed');
+			if (error instanceof SettingValidationError) {
+				return API.v1.failure(error.message, 'error-setting-validation-failed');
+			}
+			throw error;
 		}
-
-		await saveSettingsBulk(this.userId, this.bodyParams.settings, {
-			username: this.user.username ?? '',
-			ip: this.requestIp ?? '',
-			useragent: this.request.headers.get('user-agent') ?? '',
-		});
 
 		return API.v1.success();
 	},
