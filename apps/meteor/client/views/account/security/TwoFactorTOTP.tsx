@@ -15,7 +15,7 @@ type TwoFactorTOTPFormData = {
 	authCode: string;
 };
 
-type TwoFactorTOTPProps = ComponentPropsWithoutRef<typeof Box>;
+export type TwoFactorTOTPProps = ComponentPropsWithoutRef<typeof Box>;
 
 const isInvalidTotpError = (error: unknown): boolean => {
 	const { error: errorCode, errorType } = (error ?? {}) as { error?: string; errorType?: string };
