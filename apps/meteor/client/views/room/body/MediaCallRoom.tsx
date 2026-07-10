@@ -49,6 +49,7 @@ const MediaCallRoom = ({ children }: MediaCallRoomProps) => {
 	const state = usePeekMediaSessionState();
 	const hidden = usePeekMediaSessionHidden();
 	const peerInfo = usePeekMediaSessionPeerInfo();
+
 	const userId = useUserId();
 	const room = useRoom();
 
